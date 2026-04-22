@@ -19,7 +19,6 @@ const FEEDBACK_UP = "You moved up.";
 const FEEDBACK_DOWN = "You moved down.";
 const FEEDBACK_LEFT = "Your moved left.";
 const FEEDBACK_RIGHT = "Your moved right.";
-const FEEDBACK_QUIT = "You have quit the game.";
 const FEEDBACK_INVALID = "Invalid entry.";
 
 // * WIN / LOSE / OUT / QUIT messages constants
@@ -41,6 +40,8 @@ class Field {
   constructor(field = [[]]) {
     this.field = field;
     this.gamePlay = false;
+    this.playerX = 0;
+    this.playerY = 0;
   }
 
   // * generateField is a static method, returning a 2D array of the fields
@@ -75,7 +76,6 @@ class Field {
 
   // * printField displays the updated status of the field position
   printField() {
-    // Do you all remember the code we used to print the field without the [] and the ''
     this.field.forEach(row => console.log(row.join('')));
   }
 
@@ -85,15 +85,40 @@ class Field {
   }
 
   // !! TODO: updateGame Assessment Challenge
-  updateGame() {
+  // Check the following conditions:
+  // 1. Whether the player fell into HOLE, end the game
+  // 2. Whether the player moved out of the map, end the game
+  // 3. Whether the player moved to the HAT, wins the game
+  // 4. Whether the player moved to a GRASS spot, update the players's position and continue with the game
 
-    // Check the following conditions:
-    // 1. Whether the player fell into HOLE, end the game
-    // 2. Whether the player moved out of the map, end the game
-    // 3. Whether the player moved to the HAT, wins the game
-    // 4. Whether the player moved to a GRASS spot, update the players's position and continue with the game
-
+ updateGame() {
+  if (
+    this.playerX < 0 || this.playerX >= ROWS ||
+    this.playerY < 0 || this.playerY >= COLS
+  ) {
+    console.log(FEEDBACK_OUT_MSG);
+    this.#end();
+    return;
   }
+
+  const currentCell = this.field[this.playerX][this.playerY];
+
+  // If player steps on HOLE patch, game over
+  if (currentCell === HOLE) {
+    console.log(FEEDBACK_LOSE_MSG);
+    this.#end();
+
+  // If player steps on HAT patch, game wins
+  } else if (currentCell === HAT) {
+    console.log(FEEDBACK_WIN_MSG);
+    this.score++;
+    this.#end();
+
+  // If player is neither on HOLE or PATCH field, updates with grass patch after player moves
+  } else {
+    this.field[this.playerX][this.playerY] = PLAYER;
+  }
+}
 
   // * start() a public method of the class to start the game
   start() {
@@ -109,21 +134,28 @@ class Field {
       let flagInvalid = false;   // use a flag to determine if the game entry is correct
       let feedback = "";
 
+      const prevX = this.playerX;
+      const prevY = this.playerY;
+
       switch (input.toUpperCase()) {
         case UP:
           feedback = FEEDBACK_UP;
+          this.playerX--;
           break;
         case DOWN:
           feedback = FEEDBACK_DOWN;
+          this.playerX++;
           break;
         case LEFT:
           feedback = FEEDBACK_LEFT;
+          this.playerY--;
           break;
         case RIGHT:
           feedback = FEEDBACK_RIGHT;
+          this.playerY++;
           break;
         case QUIT:
-          feedback = FEEDBACK_QUIT;
+          feedback = FEEDBACK_QUIT_MSG;
           this.#end();
           break;
         default:
@@ -136,6 +168,8 @@ class Field {
 
       if (!flagInvalid) {  // flagInvalid is a boolean (if flagInvalid is NOT false (true))
         // update the game
+        
+        this.field[prevX][prevY] = GRASS;
         this.updateGame();
       }
 
@@ -145,6 +179,7 @@ class Field {
   //  * end() a private method to end the game
   #end() {
     this.gamePlay = false;
+    console.log (`Final score: ${this.score}`);
   }
 
 }
